@@ -1,33 +1,34 @@
 const express = require('express');
-const ScrapingService = require('../services/scrapingService');
+const ScraperService = require('../services/ScraperService'); // Fixed service name
 const logger = require('../utils/logger');
 
 const router = express.Router();
 
-router.post('/search', async (req, res) => {
+// FIXED: Changed to GET and use req.query instead of req.body
+router.get('/search', async (req, res) => {
   try {
-    const { query } = req.body;
+    const { query } = req.query; // Changed from req.body to req.query
     
     if (!query) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Query is required' 
+        error: 'Query parameter is required' 
       });
     }
     
     console.log(`🔍 API: Starting search for "${query}"`);
     
-    const scrapingService = new ScrapingService();
-    const results = await scrapingService.scrapeAll(query);
+    // FIXED: Use the correct ScraperService
+    const results = await ScraperService.searchAllStores(query);
     
     console.log(`✅ API: Search completed. Found ${results.length} products`);
     
     res.json({
       success: true,
       query: query,
-      results: results,
-      totalProducts: results.length,
-      stores: [...new Set(results.map(p => p.store))],
+      results: results, // This matches what frontend expects
+      count: results.length,
+      stores: ['Amazon', 'Flipkart'],
       timestamp: new Date().toISOString()
     });
     
@@ -37,16 +38,18 @@ router.post('/search', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to search products',
-      details: error.message
+      message: error.message,
+      results: []
     });
   }
 });
 
 router.get('/health', (req, res) => {
   res.json({ 
-    status: 'ok', 
-    message: 'API routes working',
-    timestamp: new Date().toISOString()
+    status: 'OK', 
+    message: 'DealHive API is running',
+    timestamp: new Date().toISOString(),
+    stores: ['Amazon', 'Flipkart']
   });
 });
 
